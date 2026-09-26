@@ -593,6 +593,46 @@ const NODE_HANG = [process.execPath, "-e", "setTimeout(() => {}, 30000)"];
   assert.strictEqual(bakedGain(null, 0.25), 1, "no backend at all must not try to bake");
   assert.strictEqual(bakedGain({ volume: false }, 0.001), 0.05, "gain is floored, never silent by accident");
 
+  // --preview must use the same baked-gain path as normal playback on
+  // backends such as PowerShell SoundPlayer that have no volume argument.
+  // Test the observable file choice rather than the implementation text.
+  const { previewAudioFile } = require("../src/cli");
+  const previousVibeSeed = process.env.VIBE_SEED;
+  const previewSeed = 424242027;
+  process.env.VIBE_SEED = String(previewSeed);
+  const previewDir = path.join(require("../src/player").CACHE_DIR, `s${previewSeed}`);
+
+  try {
+    assert.ok(
+      /loop_lofi_t2_g15\.wav$/.test(
+        previewAudioFile("lofi", 0.15, { volume: false })
+      ),
+      "--preview must bake 15% gain on a volume-less backend"
+    );
+
+    assert.ok(
+      /loop_lofi_t2_g75\.wav$/.test(
+        previewAudioFile("lofi", 0.75, { volume: false })
+      ),
+      "--preview must bake the requested gain rather than a fixed preview gain"
+    );
+
+    assert.ok(
+      /loop_lofi_t2\.wav$/.test(
+        previewAudioFile("lofi", 0.15, { volume: true })
+      ),
+      "--preview must leave audio unscaled when the backend controls volume"
+    );
+  } finally {
+    fs.rmSync(previewDir, { recursive: true, force: true });
+
+    if (previousVibeSeed === undefined) {
+      delete process.env.VIBE_SEED;
+    } else {
+      process.env.VIBE_SEED = previousVibeSeed;
+    }
+  }
+
   // Seed dirs land in the real ~/.vibeaudio/cache, and pruneSeedDirs keeps
   // only the three most recent - so a test that leaves one behind can evict
   // the cache of a project the user actually works in. Clean up after.
