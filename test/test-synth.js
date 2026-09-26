@@ -593,6 +593,15 @@ const NODE_HANG = [process.execPath, "-e", "setTimeout(() => {}, 30000)"];
   assert.strictEqual(bakedGain(null, 0.25), 1, "no backend at all must not try to bake");
   assert.strictEqual(bakedGain({ volume: false }, 0.001), 0.05, "gain is floored, never silent by accident");
 
+  // --preview must use the same baked-gain path as normal playback on
+  // backends such as PowerShell SoundPlayer that have no volume argument.
+  const cliSource = fs.readFileSync(path.join(__dirname, "..", "src", "cli.js"), "utf8");
+  assert.match(
+    cliSource,
+    /const gain = bakedGain\(backend, volume\);\s+const audioFile = getAudioPath\(resolved, 2, projectSeed\(\), gain\);/,
+    "--preview must bake the requested gain for volume-less backends"
+  );
+
   // Seed dirs land in the real ~/.vibeaudio/cache, and pruneSeedDirs keeps
   // only the three most recent - so a test that leaves one behind can evict
   // the cache of a project the user actually works in. Clean up after.

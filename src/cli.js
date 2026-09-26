@@ -11,6 +11,7 @@ const {
   getAudioPath,
   clearCache,
   detectPlayer,
+  bakedGain,
   resolveGenre,
   isKnownGenre,
   normalizeVolume,
@@ -947,7 +948,8 @@ function previewGenre(genre, volume) {
   }
 
   const resolved = resolveGenre(genre);
-  const audioFile = getAudioPath(resolved, 2);
+  const gain = bakedGain(backend, volume);
+  const audioFile = getAudioPath(resolved, 2, projectSeed(), gain);
   const seconds = ((wavDurationMs(audioFile) || 6500) / 1000).toFixed(1);
 
   console.log(`\x1b[36m♫ Previewing \x1b[1m${resolved}\x1b[0m\x1b[36m (tier 2, ${seconds}s) — Ctrl+C to stop\x1b[0m`);
