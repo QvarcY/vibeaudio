@@ -935,6 +935,15 @@ function signalExitCode(signal) {
   return 128 + (os.constants.signals[signal] || 0);
 }
 
+function previewAudioFile(genre, volume, backend) {
+  return getAudioPath(
+    resolveGenre(genre),
+    2,
+    projectSeed(),
+    bakedGain(backend, volume)
+  );
+}
+
 function previewGenre(genre, volume) {
   if (!isKnownGenre(genre)) {
     console.error(`\x1b[31m[vibeaudio] Unknown genre '${genre}'.\x1b[0m Available: ${AVAILABLE_GENRES.join(", ")}, random`);
@@ -948,8 +957,7 @@ function previewGenre(genre, volume) {
   }
 
   const resolved = resolveGenre(genre);
-  const gain = bakedGain(backend, volume);
-  const audioFile = getAudioPath(resolved, 2, projectSeed(), gain);
+  const audioFile = previewAudioFile(resolved, volume, backend);
   const seconds = ((wavDurationMs(audioFile) || 6500) / 1000).toFixed(1);
 
   console.log(`\x1b[36m♫ Previewing \x1b[1m${resolved}\x1b[0m\x1b[36m (tier 2, ${seconds}s) — Ctrl+C to stop\x1b[0m`);
@@ -1328,4 +1336,4 @@ async function run() {
   executeCommand(cmdArgs, genre, volume, chimeVolume, grace, noChime, noHud);
 }
 
-module.exports = { run, parseArgs, hooksAlreadyCover };
+module.exports = { run, parseArgs, hooksAlreadyCover, previewAudioFile };
